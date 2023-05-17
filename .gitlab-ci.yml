@@ -1,0 +1,45 @@
+stages:
+  - build
+  - push
+
+
+variables:
+  GIT_CLONE_PATH: $CI_BUILDS_DIR
+  GIT_CLEAN_FLAGS: none
+  GIT_STRATEGY: clone
+
+build:
+  stage: build
+  script:
+    - export NODEJS_HOME=/usr/local/lib/node/nodejs
+    - export PATH=$NODEJS_HOME/bin:$PATH
+    - export PUPPETEER_SKIP_DOWNLOAD='true'
+    - npm install
+    - npm run build_lib
+    - cp -R /opt/gitlab-runner/builds/_2otdCTZ/dist/ngx-intl-tel-input/* /opt/test/ngx-intl-tel-input/
+
+  tags:
+    - ngxIntlTelInput
+  rules:
+    - if: $CI_COMMIT_TAG != null && $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_COMMIT_TAG != null && $CI_PIPELINE_SOURCE == "merge_request_event"
+
+
+push:
+  stage: push
+  script:
+    - cd /opt/test/ngx-intl-tel-input/
+    - git config --global user.email $GITLAB_USER_EMAIL
+    - git config --global user.name $GITLAB_USER_NAME
+    - git init
+    - git remote add origin http://10.1.144.155/aghorbel/ngx-intl-tel-input.git
+    - git add .
+    - git commit -m "$CI_COMMIT_MESSAGE"
+    - git tag -a "$CI_COMMIT_TAG" -m "Version $CI_COMMIT_TAG"
+    - git push origin "$CI_COMMIT_TAG"
+
+  tags:
+    - ngxIntlTelInput
+  rules:
+    - if: $CI_COMMIT_TAG != null && $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_COMMIT_TAG != null && $CI_PIPELINE_SOURCE == "merge_request_event"
